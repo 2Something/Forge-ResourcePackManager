@@ -1,4 +1,4 @@
-package com.yournamespace.yourmod.util;
+package com.tutorial.mod;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackType;
@@ -29,8 +29,12 @@ import java.util.function.Consumer;
 // Forge Class: https://github.com/MinecraftForge/MinecraftForge/blob/1.19.x/src/test/java/net/minecraftforge/debug/AddPackFinderEventTest.java
 
 public class ResourcePackManager {
-    private static void registerPack(@NotNull String ID, @NotNull String resourcePackIdentifier, @NotNull Component resourcePackTitle, @NotNull IEventBus bus, @NotNull Logger log, Boolean optional, PackSource source) {
-        var file = ModList.get().getModFileById(ID).getFile();
+    private final String ID;
+    private final IEventBus bus;
+    private final Logger log;
+
+    private void registerPack(@NotNull String resourcePackIdentifier, @NotNull Component resourcePackTitle, Boolean optional, PackSource source) {
+        var file = ModList.get().getModFileById(this.ID).getFile();
         try (PathPackResources pack = new PathPackResources(
                 resourcePackIdentifier,
                 file.findResource("resourcepacks/"+resourcePackIdentifier),
@@ -49,17 +53,23 @@ public class ResourcePackManager {
                     source);
             Consumer<AddPackFindersEvent> resourcePackConsumer = event -> event.addRepositorySource((packConsumer) -> packConsumer.accept(optionalPack));
 
-            bus.addListener(resourcePackConsumer);
+            this.bus.addListener(resourcePackConsumer);
         } catch (Exception ee) {
-            log.error(ee.getMessage());
+            this.log.error(ee.getMessage());
         }
     }
 
-    public static void registerOptionalResourcePack(@NotNull String ID, @NotNull String resourcePackIdentifier, @NotNull Component resourcePackTitle, @NotNull IEventBus bus, @NotNull Logger log) {
-        registerPack(ID,resourcePackIdentifier,resourcePackTitle,bus,log, true, PackSource.BUILT_IN);
+    public ResourcePackManager(@NotNull String ID, @NotNull IEventBus bus, @NotNull Logger log) {
+        this.ID = ID;
+        this.bus = bus;
+        this.log = log;
     }
 
-    public static void registerRequiredResourcePack(@NotNull String ID, @NotNull String resourcePackIdentifier, @NotNull Component resourcePackTitle, @NotNull IEventBus bus, @NotNull Logger log) {
-        registerPack(ID,resourcePackIdentifier,resourcePackTitle,bus,log, false, PackSource.BUILT_IN);
+    public void registerOptionalResourcePack(@NotNull String resourcePackIdentifier, @NotNull Component resourcePackTitle) {
+        registerPack(resourcePackIdentifier,resourcePackTitle, true, PackSource.BUILT_IN);
+    }
+
+    public void registerRequiredResourcePack(@NotNull String resourcePackIdentifier, @NotNull Component resourcePackTitle) {
+        registerPack(resourcePackIdentifier,resourcePackTitle, false, PackSource.BUILT_IN);
     }
 }
